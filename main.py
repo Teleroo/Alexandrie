@@ -172,7 +172,6 @@ def menu():
     choice = input("\nQue voulez vous faire ?\n1. Ajouter un livre dans la bibliothèque\n2. Ranger un livre\n3. Lister les livres\n4. Modifier un livre\n5. Vider le terminal\n6. Quitter le programme\nChoix: ").lower()
 
     if not choice.isdigit():
-        print("caca")
         print("Veuillez choisir une option valide !")
         return menu()
     else:
