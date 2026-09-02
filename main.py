@@ -60,7 +60,6 @@ def newBook():
 
 def modifyBook():
     books = bookList().select("title", "author").execute().data
-    print(books)
     bookName, bookAuthor = chooseBook(False)
     print({'title': bookName, 'author': bookAuthor})
     if {'title': bookName, 'author': bookAuthor} not in books:
