@@ -48,8 +48,7 @@ def newBook():
             return newBook()
     else:
         isRead = input("Avez vous lu le livre ? (oui/non) ").lower() == "oui"
-        bookList("*").execute("""INSERT INTO bibliotheque (title, author, gender, read)
-            VALUES (%s, %s, %s, %s)""", (bookName, bookAuthor, bookGender.title(), isRead))
+        bookList("*").execute("INSERT INTO bibliotheque (title, author, gender, read) VALUES (%s, %s, %s, %s)", (bookName, bookAuthor, bookGender.title(), isRead))
         connection.commit()
 
 
@@ -166,11 +165,13 @@ def putBook():
         else:
             print(f"Il faut ranger {bookTitle(book[0])} de {book[1]} entre {bookTitle(preBook[0])} de {preBook[1]} et {bookTitle(postBook[0])} de {postBook[1]}")
 
+
 def clear():
     if os.name == "nt":
         os.system("cls")
     else:
         print("\033[H\033[J", end="")
+
 
 def menu():
     choice = input("\nQue voulez vous faire ?\n1. Ajouter un livre dans la bibliothèque\n2. Ranger un livre\n3. Lister les livres\n4. Modifier un livre\n5. Supprimer les espaces en trop (espaces de début et de fin)\n6. Vider le terminal\n7. Quitter le programme\nChoix: ").lower()
