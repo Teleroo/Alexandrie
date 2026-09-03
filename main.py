@@ -1,12 +1,10 @@
+import psycopg
 import os
-from supabase import create_client
 
-supabase = create_client(
-    "PROJECT_URL (like https://jfdskljfklsdjfklsdjfklsdjfl.supabase.co)",
-    "PUBLISHABLE_KEY (like sb_publishable_fhdjkfhksdjhfkjs_hfdjsfhsdjk)"
-)
+connection = psycopg.connect("connect link (like postgresql://neondv_owner;hfjdskfhjksdfhkjsd@hfjdskhfjkdshfkjsd...")
+db = connection.cursor()
 
-bookList = lambda: supabase.table("bibliotheque")
+bookList = lambda info, where="", params=(): db.execute(f"SELECT {",".join(info.split(" "))} FROM bibliotheque {where}", params)
 bookTitle = lambda bookName: f"\033[4m{bookName}\033[0m"
 
 
@@ -36,109 +34,116 @@ def chooseBook(gender):
             print("Veuillez choisir une option valide !")
 
     if gender:
-        return (bookName, bookAuthor, bookGender)
+        return (bookName.strip(), bookAuthor.strip(), bookGender.strip())
     else: 
-        return (bookName, bookAuthor)
-    
-    
+        return (bookName.strip(), bookAuthor.strip())
+
+
 def newBook():
     bookName, bookAuthor, bookGender = chooseBook(True)
-    books = bookList().select("title", "author").execute().data
-    if {'title': bookName, 'author': bookAuthor} in books:
+    books = bookList("title author").fetchall()
+    if (bookName, bookAuthor) in books:
         print("Le livre est déjà dans la bibliothèque !")
         if input("Voulez vous en ajouter un autre ? (oui/non) ").lower() == "oui":
             return newBook()
     else:
         isRead = input("Avez vous lu le livre ? (oui/non) ").lower() == "oui"
-        bookList().insert({
-            "title": bookName,
-            "author": bookAuthor,
-            "gender": bookGender.title(),
-            "read": isRead
-        }).execute()
+        bookList("*").execute("""INSERT INTO bibliotheque (title, author, gender, read)
+            VALUES (%s, %s, %s, %s)""", (bookName, bookAuthor, bookGender.title(), isRead))
+        connection.commit()
 
 
 def modifyBook():
-    books = bookList().select("title", "author").execute().data
+    books = bookList("title author").fetchall()
     bookName, bookAuthor = chooseBook(False)
-    print({'title': bookName, 'author': bookAuthor})
-    if {'title': bookName, 'author': bookAuthor} not in books:
+    if (bookName, bookAuthor) not in books:
         print("Le livre n'est pas dans la bibliothèque !")
         if input("Voulez vous en modifier un autre ? (oui/non) ").lower() == "oui":
             modifyBook()
     else:
-        book = bookList().select("title", "author", "gender", "read").eq("title", bookName).eq("author", bookAuthor).execute().data
-        book = book[0]
+        book = bookList("title author gender read", "WHERE title = %s AND author = %s", (bookName, bookAuthor)).fetchall()
+        book = list(book[0])
+        print(book[3])
         while True:
-            choice = input(f"Que voulez vous modifier sur {bookTitle(book["title"])}, {book["author"]},  {book["gender"]}, {"lu" if book["read"] else "pas lu"} ? (Nom, Auteur, Genre, Lu, Supprimer) ?\nChoix: ").lower()
+            choice = input(f"Que voulez vous modifier sur {bookTitle(book[0])}, {book[1]},  {book[2]}, {"lu" if book[3] else "pas lu"} ? (Nom, Auteur, Genre, Lu, Supprimer) ?\nChoix: ").lower()
 
             if choice == "nom":
-                newName = input(f"Quel nouveau nom voulez vous donner à {bookTitle(book["title"])} de {book["author"]} ? ")
-                book['title'] = newName
-                bookList().update({"title": newName}).eq("title", bookName).eq("author", bookAuthor).execute().data
+                newName = input(f"Quel nouveau nom voulez vous donner à {bookTitle(book[0])} de {book[1]} ? ")
+                book[0] = newName
+                db.execute("UPDATE bibliotheque SET title = %s WHERE title = %s AND author = %s", (newName, bookName, bookAuthor))
             elif choice == "auteur":
-                newAuthor = input(f"Quel est le nouveau nom de l'auteur de {bookTitle(book["title"])} de {book["author"]} ? ")
-                book['author'] = newAuthor
-                bookList().update({"author":newAuthor}).eq("title", bookName).eq("author", bookAuthor).execute().data
+                newAuthor = input(f"Quel est le nouveau nom de l'auteur de {bookTitle(book[0])} de {book[1]} ? ")
+                book[1] = newAuthor
+                db.execute("UPDATE bibliotheque SET author = %s WHERE title = %s AND author = %s", (newAuthor, bookName, bookAuthor))
             elif choice == "genre":
-                newGender = input(f"Quel est le nouveau nom de l'auteur de {bookTitle(book["title"])} de {book["author"]}, {book["gender"]} ? ")
-                book['gender'] = newGender
-                bookList().update({"gender": newGender}).eq("title", bookName).eq("author", bookAuthor).execute().data
+                newGender = input(f"Quel est le nouveau nom de l'auteur de {bookTitle(book[0])} de {book[1]}, {book[2]} ? ")
+                book[2] = newGender
+                db.execute("UPDATE bibliotheque SET gender = %s WHERE title = %s AND author = %s", (newGender, bookName, bookAuthor))
             elif choice == "lu":
-                book["read"] = not book["read"]
-                bookList().update({"read": book["read"]}).eq("title", bookName).eq("author", bookAuthor).execute().data
-                print(f"Le livre est bien noté en {"lu" if book["read"] else "non lu"}")
+                book[3] = not book[3]
+                db.execute("UPDATE bibliotheque SET read = %s WHERE title = %s AND author = %s", (book[3], bookName, bookAuthor))
+                print(f"Le livre est bien noté en {"lu" if book[3] else "non lu"}")
             elif choice == "supprimer":
-                delete = input(f"Etes vous sûr de vouloir supprimer {bookTitle(book['title'])} de {book['author']} ? (oui/non) ").lower() == "oui"
+                delete = input(f"Etes vous sûr de vouloir supprimer {bookTitle(book[0])} de {book[1]} ? (oui/non) ").lower() == "oui"
                 if delete:
-                    bookList().delete().eq("title", bookName).eq("author", bookAuthor).execute()
+                    db.execute("DELETE FROM bibliotheque WHERE title = %s AND author = %s", (bookName, bookAuthor))
+                    connection.commit()
                     return
             else:
                 print("Veuillez choisir une option valide !")
                 continue
 
+            connection.commit()
             choice = input("Voulez vous modifier quelque chose d'autre sur le livre ? (oui/non) ").lower()
             if choice == "non":
                 break
-            
+
 
 def listBook():
-    nbrOfBooks = len(bookList().select("read").execute().data)
-    nbrReadBooks = len(bookList().select("read").eq("read", True).execute().data)
-    print(f"\nVous avez lu {nbrReadBooks}/{nbrOfBooks} livres soit {100*nbrReadBooks/nbrOfBooks:.1f}% de votre bibliothèque.")
+    nbrOfBooks = len(bookList("read").fetchall())
+    nbrReadBooks = len(bookList("read", "WHERE read = %s", (True,)).fetchall())
+    print(f"\nVous avez lu {nbrReadBooks}/{nbrOfBooks} livres soit {(100 * nbrReadBooks / nbrOfBooks if nbrOfBooks else 0):.1f}% de votre bibliothèque.")
     choice = input("Vous voulez:\n1. Lister tout les livres\n2. Lister les livres par genre\n3. Lister les livres lus\n4. Lister les livres non lus\nChoix: ")
-    books = bookList().select("title", "author", "gender", "read")
+    books = bookList("title author gender read")
     while True: 
         if choice == "1":
-            books = books.execute().data
+            books = bookList("title author gender read").fetchall()
             break
         elif choice == "2":
             genderChoice = input("Quel genre de livre voulez vous voir ? ").title()
-            while genderChoice not in [i["gender"] for i in bookList().select("gender").execute().data]:
+            genders = [i[0] for i in db.execute("SELECT DISTINCT gender FROM bibliotheque").fetchall()]
+            while genderChoice not in genders:
                 genderChoice = input("Ce type de genre n'est pas présent, quel genre de livre voulez vous voir ? ")
-            books = books.eq("gender", genderChoice).execute().data
+            books = bookList("title author gender read", "WHERE gender = %s", (genderChoice,)).fetchall()
+            nbrOfBooks = len(books)
+            nbrReadBooks = len(bookList("read gender", "WHERE read = %s AND gender = %s", (True, genderChoice)).fetchall())
+            print(f"Vous avez lu {nbrReadBooks}/{nbrOfBooks} livres de {genderChoice.lower()} soit {(100 * nbrReadBooks / nbrOfBooks if nbrOfBooks else 0):.1f}% de votre bibliothèque.")
             break
         elif choice == "3":
-            books = books.eq("read", True).execute().data
+            books = bookList("title author gender read", "WHERE read = %s", (True,)).fetchall()
             break
         elif choice == "4":
-            books = books.eq("read", False).execute().data
+            books = bookList("title author gender read", "WHERE read = %s", (False,)).fetchall()
             break
         else:
             print("Veuillez choisir une option valide !")
-            
+
     print("\nVous avez:")
-    books = sorted(books, key = lambda book : (book["author"].split(" ")[-1], book["title"]))
+    books = sorted(books, key = lambda book : (book[1].split(" ")[-1], book[0]))
     for book in books:
-        print(f"{bookTitle(book["title"])}, {book["author"]}, {book["gender"]}, {"lu" if book["read"] else "pas lu"}")
+        print(f"{bookTitle(book[0])}, {book[1]}, {book[2]}, {"lu" if book[3] else "pas lu"}")
 
 
 def putBook():
     bookName, bookAuthor = chooseBook(False)
-    book = bookList().select("title", "author", "gender").eq("title", bookName).eq("author", bookAuthor).execute().data
-    book = book[0]
-    books = bookList().select("title", "author", "gender").eq("gender", book["gender"]).execute().data
-    books = sorted(books, key = lambda book : (book["author"].split(" ")[-1], book["title"]))
+    if (bookName, bookAuthor) not in bookList("title author").fetchall():
+        print("Le livre n'est pas dans la bibliothèque !")
+        if input("Voulez vous en ranger un autre ? (oui/non) ").lower() == "oui":
+            putBook()
+        return
+    book = bookList("title author gender", "WHERE title = %s AND author = %s", (bookName, bookAuthor)).fetchall()[0]
+    books = bookList("title author gender", "WHERE gender = %s", (book[2],)).fetchall()
+    books = sorted(books, key = lambda book : (book[1].split(" ")[-1], book[0]))
 
     bookIndex = books.index(book)
     if bookIndex == 0:
@@ -152,14 +157,14 @@ def putBook():
         postBook = books[bookIndex + 1]
 
     if preBook == 0:
-        print(f"C'est le premier livre à mettre en {book["gender"].title()} ! Le livre après est {bookTitle(postBook['title'])} de {postBook['author']}")
+        print(f"C'est le premier livre à mettre en {book[2].title()} ! Le livre après est {bookTitle(postBook[0])} de {postBook[1]}")
     elif postBook == 0:
-        print(f"C'est le dernier livre à mettre en {book["gender"].title()} ! Le livre avant est {bookTitle(preBook['title'])} de {preBook['author']}")
+        print(f"C'est le dernier livre à mettre en {book[2].title()} ! Le livre avant est {bookTitle(preBook[0])} de {preBook[1]}")
     else:
-        if preBook['author'] == postBook['author']:
-            print(f"Il faut ranger {bookTitle(book["title"])} entre {bookTitle(preBook['title'])} et {bookTitle(postBook['title'])} de {book['author']}")
+        if preBook[1] == postBook[1]:
+            print(f"Il faut ranger {bookTitle(book[0])} entre {bookTitle(preBook[0])} et {bookTitle(postBook[0])} de {book[1]}")
         else:
-            print(f"Il faut ranger {bookTitle(book["title"])} de {book['author']} entre {bookTitle(preBook['title'])} de {preBook['author']} et {bookTitle(postBook['title'])} de {postBook['author']}")
+            print(f"Il faut ranger {bookTitle(book[0])} de {book[1]} entre {bookTitle(preBook[0])} de {preBook[1]} et {bookTitle(postBook[0])} de {postBook[1]}")
 
 def clear():
     if os.name == "nt":
@@ -168,9 +173,10 @@ def clear():
         print("\033[H\033[J", end="")
 
 def menu():
-    choice = input("\nQue voulez vous faire ?\n1. Ajouter un livre dans la bibliothèque\n2. Ranger un livre\n3. Lister les livres\n4. Modifier un livre\n5. Vider le terminal\n6. Quitter le programme\nChoix: ").lower()
+    choice = input("\nQue voulez vous faire ?\n1. Ajouter un livre dans la bibliothèque\n2. Ranger un livre\n3. Lister les livres\n4. Modifier un livre\n5. Supprimer les espaces en trop (espaces de début et de fin)\n6. Vider le terminal\n7. Quitter le programme\nChoix: ").lower()
 
     if not choice.isdigit():
+        print("caca")
         print("Veuillez choisir une option valide !")
         return menu()
     else:
@@ -185,8 +191,11 @@ def menu():
     elif choice == 4:
         modifyBook()
     elif choice == 5:
-        clear()
+        db.execute("UPDATE bibliotheque SET title = TRIM(title),author = TRIM(author),gender = TRIM(gender);")
+        connection.commit()
     elif choice == 6:
+        clear()
+    elif choice == 7:
         exit()
     else:
         print("Veuillez choisir une option valide !")
