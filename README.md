@@ -5,7 +5,7 @@ Voir le fichier [LICENSE](LICENSE) pour le texte complet de la licence.
 
 # 📚 Alexandrie
 
-Petite application Python permettant de gérer une bibliothèque personnelle avec **Supabase / PostgreSQL**.
+Petite application Python permettant de gérer une bibliothèque personnelle avec **Neon**.
 
 Le programme permet d'ajouter, consulter, modifier, supprimer et organiser des livres, tout en gardant leur statut de lecture.
 
@@ -74,11 +74,11 @@ Il indique notamment les livres qui se trouvent avant et après le livre sélect
 ### Création de la base Supabase
 
 **Manuellement:**
-- Aller sur Supabase et créer une Database nommée `bibliotheque`.
-- Lui ajouter les colonnes de type text `title`, `author`, `gender`, et la colonne de type bool `read`.
+- Aller sur Neon et créer une Database nommée `bibliotheque`.
+- Lui ajouter les colonnes de type text `title`, `author`, `gender`; `readed_at` de type `date` et la colonne de type bool `read`.
 
 **Automatiquement:**
-- Aller sur Supabase et aller dans l'onglet `SQL Editor`
+- Aller sur Neon et aller dans l'onglet `SQL Editor`
 - Lancer ce code en appuyant sur `run` ou en faisant `CTRL + ENTER`
 ```sql
 CREATE TABLE IF NOT EXISTS bibliotheque (
@@ -89,14 +89,13 @@ CREATE TABLE IF NOT EXISTS bibliotheque (
     read BOOLEAN NOT NULL DEFAULT FALSE
 );
 ```
-⚠️ Il vous sera demandé d'activer ou non le RLS, il faut absolument le laisser **désactivé** pour le bon fonctionnement du programme.
 
 ### Utilisation python
 
 Installer la dépendance Supabase :
 
 ```bash
-pip install supabase
+pip install psycopg
 ```
 
 Puis renseigner les informations de connexion à votre projet Supabase dans le programme.
@@ -104,7 +103,7 @@ Puis renseigner les informations de connexion à votre projet Supabase dans le p
 Lancer ensuite :
 
 ```bash
-python bibliotheque.py
+python main.py
 ```
 
 ## 📋 Menu principal
