@@ -2,11 +2,14 @@ import psycopg
 import os
 
 connection = psycopg.connect("connect link (like postgresql://neondv_owner;hfjdskfhjksdfhkjsd@hfjdskhfjkdshfkjsd...")
+import psycopg
+import os
+
+connection = psycopg.connect("postgresql://neondb_owner:npg_g9qlrvEtx8zb@ep-fragrant-recipe-b1r7tfr2-pooler.c-5.eu-central-1.aws.neon.tech/bibliotheque?sslmode=require&channel_binding=require")
 db = connection.cursor()
 
 bookList = lambda info, where="", params=(): db.execute(f"SELECT {",".join(info.split(" "))} FROM bibliotheque {where}", params)
 bookTitle = lambda bookName: f"\033[4m{bookName}\033[0m"
-
 
 def chooseBook(gender):
     bookName = input("\nQuel est le nom du livre ? ")
@@ -62,7 +65,6 @@ def modifyBook():
     else:
         book = bookList("title author gender read", "WHERE title = %s AND author = %s", (bookName, bookAuthor)).fetchall()
         book = list(book[0])
-        print(book[3])
         while True:
             choice = input(f"Que voulez vous modifier sur {bookTitle(book[0])}, {book[1]},  {book[2]}, {"lu" if book[3] else "pas lu"} ? (Nom, Auteur, Genre, Lu, Supprimer) ?\nChoix: ").lower()
 
@@ -177,7 +179,6 @@ def menu():
     choice = input("\nQue voulez vous faire ?\n1. Ajouter un livre dans la bibliothèque\n2. Ranger un livre\n3. Lister les livres\n4. Modifier un livre\n5. Supprimer les espaces en trop (espaces de début et de fin)\n6. Vider le terminal\n7. Quitter le programme\nChoix: ").lower()
 
     if not choice.isdigit():
-        print("caca")
         print("Veuillez choisir une option valide !")
         return menu()
     else:
