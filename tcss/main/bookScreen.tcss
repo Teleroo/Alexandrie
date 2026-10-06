@@ -1,0 +1,28 @@
+BookScreen {
+    align: center middle;
+
+    .dialog {
+        width: 50%;
+        height: auto;
+        background: darkslategray;
+        content-align: center middle;
+        padding: 0 2;
+    }
+
+    .compo {
+        margin:1 0;
+    }
+
+    .read {
+        align: center middle;
+    }
+
+    .horizontal {
+        height: auto;
+    }
+
+    .delete {
+        dock: right;
+        margin: 0 1;
+    }
+}

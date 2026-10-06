@@ -1,0 +1,26 @@
+QuestionView {
+    #dialog {
+        height: 100%;
+        margin: 4 8;
+        color: $text;
+        padding: 1 2;
+    }
+
+    Button {
+        width: 1fr;
+    }
+
+    .question {
+        text-style: bold;
+        height: 100%;
+        width: 100%;
+        content-align: center middle;
+        text-align: center;
+    }
+
+    .buttons {
+        width: 100%;
+        height: auto;
+        dock: bottom;
+    }
+}

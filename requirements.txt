@@ -1,0 +1,3 @@
+textual
+requests
+psycopg[binary]
