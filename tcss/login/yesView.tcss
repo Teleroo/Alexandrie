@@ -1,0 +1,16 @@
+#inputDB {
+    height: 100%;
+    align: center middle;
+}
+
+.label {
+    width: 75%;
+    height: auto;
+    text-align: center;
+    padding: 1 1;
+}
+
+Input {
+    width: 75%;
+    height: auto;
+}

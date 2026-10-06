@@ -1,0 +1,19 @@
+PutBookScreen {
+    align: center middle;
+
+    .putBook {
+        background: transparent;
+        width: 50%;
+        height: 50%;
+        content-align: center middle;
+        margin: 1 2;
+    }
+    
+    #putBook {
+        background: transparent;
+        text-align: center;
+        content-align: center middle;
+        width: 1fr;
+        height: 1fr;
+    }
+}
